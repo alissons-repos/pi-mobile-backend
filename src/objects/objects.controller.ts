@@ -1,0 +1,46 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
+import { ObjectsService } from './objects.service';
+import { CreateObjectDto } from './dto/create-object.dto';
+import { UpdateObjectDto } from './dto/update-object.dto';
+import { IdParamDto } from 'src/utils/dto/id-param.dto';
+
+@Controller('objects')
+export class ObjectsController {
+  constructor(private readonly objectsService: ObjectsService) {}
+
+  @Post()
+  create(@Body() createObjectDto: CreateObjectDto) {
+    return this.objectsService.create(createObjectDto);
+  }
+
+  @Get()
+  findAll() {
+    return this.objectsService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: IdParamDto) {
+    return this.objectsService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: IdParamDto,
+    @Body() updateObjectDto: UpdateObjectDto,
+  ) {
+    return this.objectsService.update(id, updateObjectDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: IdParamDto) {
+    return this.objectsService.remove(id);
+  }
+}
