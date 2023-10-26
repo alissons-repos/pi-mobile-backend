@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String              @id @default(auto()) @map("_id") @db.ObjectId
+  cpf             String              @unique
+  email           String              @unique
+  hash            String
+  firstName       String
+  lastName        String
+  phone           String
+  objects         Object[]
+  notifications   MatchNotification[] @relation(name: "matchUsers", fields: [notificationIds], references: [id])
+  notificationIds String[]            @db.ObjectId
+}
+
+model Object {
+  id              String              @id @default(auto()) @map("_id") @db.ObjectId
+  situation       Boolean             @default(false)
+  object          String
+  brand           String              @default("null") // Opcional
+  model           String              @default("null") // Opcional
+  color           String
+  characteristics String[]            @default(["null"]) // Opcional
+  place           String
+  date            DateTime
+  time            DateTime
+  info            String              @default("null") // Opcional
+  recordOwner     User                @relation(fields: [recordOwnerId], references: [id])
+  recordOwnerId   String              @db.ObjectId
+  notifications   MatchNotification[] @relation(name: "matchObjects", fields: [notificationIds], references: [id])
+  notificationIds String[]            @db.ObjectId
+}
+
+model MatchNotification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  type      String   @default("match")
+  user      User[]   @relation(name: "matchUsers", fields: [userIds], references: [id])
+  userIds   String[] @db.ObjectId
+  object    Object[] @relation(name: "matchObjects", fields: [objectIds], references: [id])
+  objectIds String[] @db.ObjectId
+}
+
+// Address is an embedded document
+// type Address {
+//   street String
+//   city   String
+//   state  String
+//   zip    String
+// }
+
+// type Characteristic {
+//   content String[]
+// }
