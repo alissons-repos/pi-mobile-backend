@@ -8,10 +8,12 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserPassDto } from './dto/update-user-pass.dto';
 // import { IdParamDto } from 'src/utils/dto/id-param.dto';
 
 @Controller('users')
@@ -33,9 +35,14 @@ export class UsersController {
     return this.usersService.findUserById(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(@Param('id') id: string, @Body() updateUserBody: UpdateUserDto) {
     return this.usersService.updateUser(id, updateUserBody);
+  }
+
+  @Patch('reset')
+  updatePass(@Body() updateUserPassBody: UpdateUserPassDto) {
+    return this.usersService.updateUserPass(updateUserPassBody);
   }
 
   @Delete(':id')
