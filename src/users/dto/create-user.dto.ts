@@ -1,4 +1,5 @@
 import {
+  IsAlpha,
   IsEmail,
   IsNotEmpty,
   IsPhoneNumber,
@@ -17,14 +18,14 @@ export class CreateUserDto {
 
   @IsNotEmpty()
   @IsStrongPassword()
-  hash: string;
+  password: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsAlpha()
   firstName: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsAlpha()
   lastName: string;
 
   @IsNotEmpty()

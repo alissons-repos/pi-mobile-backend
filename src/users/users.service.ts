@@ -5,6 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 // import { IdParamDto } from 'src/utils/dto/id-param.dto';
 import { UserWithoutHash } from 'src/utils/types/UserCustomTypes.type';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -24,19 +25,24 @@ export class UsersService {
       );
     }
 
+    const data = {
+      ...createUserBody,
+      hash: await bcrypt.hash(createUserBody.password, 10),
+    };
+
+    delete data.password;
+
     try {
-      const newUser = await this.prisma.user.create({
-        data: createUserBody,
-      });
+      const newUser = await this.prisma.user.create({ data });
 
       return newUser;
     } catch (e) {
       console.error(e);
 
-      throw new HttpException(
-        'Erro interno na aplicação',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      // throw new HttpException(
+      //   'Erro interno na aplicação',
+      //   HttpStatus.INTERNAL_SERVER_ERROR,
+      // );
     }
   }
 
@@ -44,7 +50,7 @@ export class UsersService {
     try {
       const usersList = await this.prisma.user.findMany();
       const userListWithoutHash = usersList.map((user) => {
-        // delete user.hash;
+        delete user.hash;
         return user;
       });
 
@@ -52,10 +58,10 @@ export class UsersService {
     } catch (e) {
       console.error(e);
 
-      throw new HttpException(
-        'Erro interno na aplicação',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      // throw new HttpException(
+      //   'Erro interno na aplicação',
+      //   HttpStatus.INTERNAL_SERVER_ERROR,
+      // );
     }
   }
 
@@ -80,24 +86,50 @@ export class UsersService {
     // }
   }
 
+  async findUserBy(property: string): Promise<User | never> {
+    // const user = await this.prisma.user.findUnique({
+    //   where: { email: property, cpf: '' },
+    // });
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ cpf: { equals: property } }, { email: { equals: property } }],
+      },
+    });
+
+    if (!user) {
+      throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
+    }
+
+    return user;
+  }
+
   async updateUser(
     id: string,
     updateUserBody: UpdateUserDto,
   ): Promise<UserWithoutHash> {
-    const { hash, cpf } = updateUserBody;
+    const user = await this.prisma.user.findUnique({ where: { id } });
 
-    if (hash || cpf) {
-      delete updateUserBody.hash;
-      delete updateUserBody.cpf;
+    if (!user) {
+      throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
     }
 
-    const user = await this.prisma.user.update({
-      where: { id },
-      data: updateUserBody,
-    });
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: updateUserBody,
+      });
 
-    delete user.hash;
-    return user;
+      delete user.hash;
+      return user;
+    } catch (e) {
+      console.error(e);
+
+      // throw new HttpException(
+      //   'Erro interno na aplicação',
+      //   HttpStatus.INTERNAL_SERVER_ERROR,
+      // );
+    }
   }
 
   async removeUser(id: string) {
