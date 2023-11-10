@@ -52,8 +52,13 @@ export class AuthService {
     const { cpf, email, password } = signInBody;
 
     let user: User;
-    // FIXME: Encontrar a lógica para permitir dois tipos de login
-    if (cpf && email) user = await this.usersService.findUserBy(cpf);
+    if (cpf && email) {
+      throw new HttpException(
+        'Utilize apenas uma das seguintes opções: CPF ou EMAIL!',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (cpf && !email) user = await this.usersService.findUserBy(cpf);
     if (email && !cpf) user = await this.usersService.findUserBy(email);
 
     const isValidHash = await bcrypt.compare(password, user.hash);

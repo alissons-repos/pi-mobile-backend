@@ -9,6 +9,7 @@ datasource db {
 
 model User {
   id              String              @id @default(auto()) @map("_id") @db.ObjectId
+  avatar          String
   cpf             String              @unique
   email           String              @unique
   hash            String
@@ -46,15 +47,3 @@ model MatchNotification {
   object    Object[] @relation(name: "matchObjects", fields: [objectIds], references: [id])
   objectIds String[] @db.ObjectId
 }
-
-// Address is an embedded document
-// type Address {
-//   street String
-//   city   String
-//   state  String
-//   zip    String
-// }
-
-// type Characteristic {
-//   content String[]
-// }

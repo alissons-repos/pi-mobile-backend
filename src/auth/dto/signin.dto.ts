@@ -1,4 +1,10 @@
-import { IsEmail, IsNotEmpty, IsString, ValidateIf } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  IsStrongPassword,
+  ValidateIf,
+} from 'class-validator';
 
 export class SignInDto {
   @ValidateIf((o) => !o.email || o.cpf, {
@@ -16,6 +22,6 @@ export class SignInDto {
   email: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsStrongPassword()
   password: string;
 }

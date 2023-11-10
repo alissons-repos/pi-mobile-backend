@@ -2,10 +2,13 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UpdateUserPassDto } from './dto/update-user-pass.dto';
+import { SignInDto } from 'src/auth/dto/signin.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserWithoutHash } from 'src/utils/types/UserCustomTypes.type';
 import * as bcrypt from 'bcrypt';
+import { Request } from 'express';
+import { createClient } from '@supabase/supabase-js';
+import { File } from 'buffer';
 // import { IdParamDto } from 'src/utils/dto/id-param.dto';
 
 @Injectable()
@@ -21,13 +24,14 @@ export class UsersService {
 
     if (exists) {
       throw new HttpException(
-        'Dados de CPF ou EMAIL já cadastrados no sistema!',
+        'Credenciais, CPF ou EMAIL, já cadastrados no sistema!',
         HttpStatus.BAD_REQUEST,
       );
     }
 
     const data = {
       ...createUserBody,
+      avatar: 'default-avatar.jpg',
       hash: await bcrypt.hash(createUserBody.password, 10),
     };
 
@@ -39,7 +43,6 @@ export class UsersService {
       return newUser;
     } catch (e) {
       console.error('Erro Logado:', e);
-
       // throw new HttpException(
       //   'Erro interno na aplicação',
       //   HttpStatus.INTERNAL_SERVER_ERROR,
@@ -58,7 +61,6 @@ export class UsersService {
       return userListWithoutHash;
     } catch (e) {
       console.error('Erro Logado:', e);
-
       // throw new HttpException(
       //   'Erro interno na aplicação',
       //   HttpStatus.INTERNAL_SERVER_ERROR,
@@ -87,11 +89,9 @@ export class UsersService {
     // }
   }
 
-  async findUserBy(property: string): Promise<User | never> {
+  async findUserBy(prop: string): Promise<User | never> {
     const user = await this.prisma.user.findFirst({
-      where: {
-        OR: [{ cpf: { equals: property } }, { email: { equals: property } }],
-      },
+      where: { OR: [{ cpf: { equals: prop } }, { email: { equals: prop } }] },
     });
 
     if (!user) {
@@ -106,19 +106,21 @@ export class UsersService {
     updateUserBody: UpdateUserDto,
   ): Promise<UserWithoutHash | never> {
     const user = await this.prisma.user.findUnique({ where: { id } });
+
     if (!user) {
       throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
     }
+
     try {
       const user = await this.prisma.user.update({
         where: { id },
         data: updateUserBody,
       });
+
       delete user.hash;
       return user;
     } catch (e) {
       console.error('Erro Logado:', e);
-
       // throw new HttpException(
       //   'Erro interno na aplicação',
       //   HttpStatus.INTERNAL_SERVER_ERROR,
@@ -127,32 +129,28 @@ export class UsersService {
   }
 
   async updateUserPass(
-    updateUserPassBody: UpdateUserPassDto,
+    updateUserPassBody: SignInDto,
   ): Promise<UserWithoutHash | never> {
-    const { cpf, password } = updateUserPassBody;
+    const { cpf, email, password } = updateUserPassBody;
 
-    const user = await this.prisma.user.findUnique({
-      where: { cpf },
-      select: { hash: true },
-    });
+    let user: User;
 
-    if (!user) {
-      throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
-    }
+    if (cpf && !email) user = await this.findUserBy(cpf);
+    if (email && !cpf) user = await this.findUserBy(email);
 
+    const id = user.id;
     const data = { hash: await bcrypt.hash(password, 10) };
 
     try {
       const user = await this.prisma.user.update({
-        where: { cpf },
-        data: data,
+        where: { id },
+        data,
       });
 
       delete user.hash;
       return user;
     } catch (e) {
       console.error('Erro Logado:', e);
-
       // throw new HttpException(
       //   'Erro interno na aplicação',
       //   HttpStatus.INTERNAL_SERVER_ERROR,
@@ -172,11 +170,69 @@ export class UsersService {
       return;
     } catch (e) {
       console.error('Erro Logado:', e);
-
       // throw new HttpException(
       //   'Erro interno na aplicação',
       //   HttpStatus.INTERNAL_SERVER_ERROR,
       // );
+    }
+  }
+
+  async uploadUserAvatar(
+    req: Request,
+    avatar: Express.Multer.File,
+  ): Promise<UserWithoutHash | never> {
+    if (!avatar) {
+      throw new HttpException(
+        'É obrigatório o envio de pelo menos uma foto de perfil!',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_KEY,
+      { auth: { persistSession: false } },
+    );
+
+    const userID = req.user['id'];
+    const avatarFileName = `${userID}-avatar`;
+    const file = new File([avatar.buffer], avatarFileName, {
+      type: avatar.mimetype,
+    });
+
+    const { error } = await supabase.storage
+      .from('usersAvatars')
+      .upload(avatarFileName, file, { upsert: true });
+
+    if (error) {
+      console.log('Erro aqui: ', error);
+
+      throw new HttpException(
+        'Algo deu errado ao tentar enviar a imagem!',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const avatarPublicUrl = supabase.storage
+      .from('usersAvatars')
+      .getPublicUrl(avatarFileName).data.publicUrl;
+
+    const user = this.prisma.user.findUnique({ where: { id: userID } });
+
+    if (!user) {
+      throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
+    }
+
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userID },
+        data: { avatar: avatarPublicUrl },
+      });
+
+      delete user.hash;
+      return user;
+    } catch (e) {
+      console.error('Erro Logado:', e);
     }
   }
 }

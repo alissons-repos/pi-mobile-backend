@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateObjectDto } from './dto/create-object.dto';
 import { UpdateObjectDto } from './dto/update-object.dto';
-import { IdParamDto } from 'src/utils/dto/id-param.dto';
+import { IdParamDto } from 'src/utils/dtos/id-param.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()

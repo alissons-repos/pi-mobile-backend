@@ -10,7 +10,7 @@ import {
 import { ObjectsService } from './objects.service';
 import { CreateObjectDto } from './dto/create-object.dto';
 import { UpdateObjectDto } from './dto/update-object.dto';
-import { IdParamDto } from 'src/utils/dto/id-param.dto';
+import { IdParamDto } from 'src/utils/dtos/id-param.dto';
 
 @Controller('objects')
 export class ObjectsController {
