@@ -2,14 +2,13 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { SignInDto } from 'src/auth/dto/signin.dto';
+// import { IdParamDto } from 'src/utils/dto/id-param.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserWithoutHash } from 'src/utils/types/UserCustomTypes.type';
 import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { File } from 'buffer';
-// import { IdParamDto } from 'src/utils/dto/id-param.dto';
 
 @Injectable()
 export class UsersService {
@@ -102,10 +101,11 @@ export class UsersService {
   }
 
   async updateUser(
-    id: string,
+    req: Request,
     updateUserBody: UpdateUserDto,
   ): Promise<UserWithoutHash | never> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const userID: string = req.user['id'];
+    const user = await this.prisma.user.findUnique({ where: { id: userID } });
 
     if (!user) {
       throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
@@ -113,7 +113,7 @@ export class UsersService {
 
     try {
       const user = await this.prisma.user.update({
-        where: { id },
+        where: { id: userID },
         data: updateUserBody,
       });
 
@@ -128,46 +128,21 @@ export class UsersService {
     }
   }
 
-  async updateUserPass(
-    updateUserPassBody: SignInDto,
-  ): Promise<UserWithoutHash | never> {
-    const { cpf, email, password } = updateUserPassBody;
-
-    let user: User;
-
-    if (cpf && !email) user = await this.findUserBy(cpf);
-    if (email && !cpf) user = await this.findUserBy(email);
-
-    const id = user.id;
-    const data = { hash: await bcrypt.hash(password, 10) };
-
+  async removeUser(req: Request) {
     try {
-      const user = await this.prisma.user.update({
-        where: { id },
-        data,
+      const userID: string = req.user['id'];
+      const exist = await this.prisma.user.findUnique({
+        where: { id: userID },
       });
 
-      delete user.hash;
-      return user;
-    } catch (e) {
-      console.error('Erro Logado:', e);
-      // throw new HttpException(
-      //   'Erro interno na aplicação',
-      //   HttpStatus.INTERNAL_SERVER_ERROR,
-      // );
-    }
-  }
+      if (!exist) {
+        throw new HttpException(
+          'Usuário não encontrado!',
+          HttpStatus.NOT_FOUND,
+        );
+      }
 
-  async removeUser(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-
-    if (!user) {
-      throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
-    }
-
-    try {
-      await this.prisma.user.delete({ where: { id } });
-      return;
+      return await this.prisma.user.delete({ where: { id: userID } });
     } catch (e) {
       console.error('Erro Logado:', e);
       // throw new HttpException(
@@ -188,13 +163,19 @@ export class UsersService {
       );
     }
 
+    const userID: string = req.user['id'];
+    const user = this.prisma.user.findUnique({ where: { id: userID } });
+
+    if (!user) {
+      throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
+    }
+
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_KEY,
       { auth: { persistSession: false } },
     );
 
-    const userID = req.user['id'];
     const avatarFileName = `${userID}-avatar`;
     const file = new File([avatar.buffer], avatarFileName, {
       type: avatar.mimetype,
@@ -216,12 +197,6 @@ export class UsersService {
     const avatarPublicUrl = supabase.storage
       .from('usersAvatars')
       .getPublicUrl(avatarFileName).data.publicUrl;
-
-    const user = this.prisma.user.findUnique({ where: { id: userID } });
-
-    if (!user) {
-      throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
-    }
 
     try {
       const user = await this.prisma.user.update({

@@ -17,10 +17,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { SignInDto } from 'src/auth/dto/signin.dto';
-import { fileValidation } from 'src/utils/helpers/multerOptions';
-// import { Request } from 'express';
 // import { IdParamDto } from 'src/utils/dto/id-param.dto';
+import { fileValidation } from 'src/utils/helpers/multerOptions';
+import { Request } from 'express';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -37,44 +36,23 @@ export class UsersController {
     return this.usersService.findUserById(id);
   }
 
-  @Put(':id')
-  update(@Param('id') id: string, @Body() updateUserBody: UpdateUserDto) {
-    return this.usersService.updateUser(id, updateUserBody);
+  @Put()
+  update(@Req() req: Request, @Body() updateUserBody: UpdateUserDto) {
+    return this.usersService.updateUser(req, updateUserBody);
   }
 
-  // FIXME: enviar essa rota para auth
-  @Patch('reset')
-  updatePass(@Body() updateUserPassBody: SignInDto) {
-    return this.usersService.updateUserPass(updateUserPassBody);
-  }
-
-  @Delete(':id')
+  @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.usersService.removeUser(id);
+  remove(@Req() req: Request) {
+    return this.usersService.removeUser(req);
   }
 
   @Patch('upload')
   @UseInterceptors(FileInterceptor('avatar'))
-  uploadAvatar(
-    @Req() req,
+  upload(
+    @Req() req: Request,
     @UploadedFile(fileValidation) avatar: Express.Multer.File,
   ) {
     return this.usersService.uploadUserAvatar(req, avatar);
   }
-
-  // @Post('objects/upload')
-  // @UseInterceptors(FilesInterceptor('photos', 4))
-  // uploadObjectPhotos(
-  //   @UploadedFiles(fileValidation)
-  //   photos: Array<Express.Multer.File>,
-  // ) {
-  //   if (!photos) {
-  //     throw new HttpException(
-  //       'É obrigatório o envio de pelo menos uma foto do objeto!',
-  //       HttpStatus.BAD_REQUEST,
-  //     );
-  //   }
-  //   return photos;
-  // }
 }

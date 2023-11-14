@@ -2,8 +2,8 @@ import { PartialType } from '@nestjs/mapped-types';
 import { CreateObjectDto } from './create-object.dto';
 import {
   IsArray,
-  IsBoolean,
-  IsDate,
+  IsDateString,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -11,7 +11,8 @@ import {
 
 export class UpdateObjectDto extends PartialType(CreateObjectDto) {
   @IsNotEmpty()
-  @IsBoolean()
+  @IsString()
+  @IsIn(['found', 'lost'])
   situation: string;
 
   @IsNotEmpty()
@@ -32,6 +33,7 @@ export class UpdateObjectDto extends PartialType(CreateObjectDto) {
 
   @IsOptional()
   @IsArray()
+  @IsString({ each: true })
   characteristics: string[];
 
   @IsNotEmpty()
@@ -39,12 +41,8 @@ export class UpdateObjectDto extends PartialType(CreateObjectDto) {
   place: string;
 
   @IsNotEmpty()
-  @IsDate()
-  date: string;
-
-  @IsNotEmpty()
-  @IsDate()
-  time: string;
+  @IsDateString()
+  datetime: string;
 
   @IsOptional()
   @IsString()

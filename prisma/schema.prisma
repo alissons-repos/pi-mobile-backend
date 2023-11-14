@@ -23,16 +23,16 @@ model User {
 
 model Object {
   id              String              @id @default(auto()) @map("_id") @db.ObjectId
-  situation       Boolean             @default(false)
+  situation       String              @default("lost")
   object          String
   brand           String              @default("null") // Opcional
   model           String              @default("null") // Opcional
   color           String
   characteristics String[]            @default(["null"]) // Opcional
   place           String
-  date            DateTime
-  time            DateTime
+  datetime        DateTime
   info            String              @default("null") // Opcional
+  photos          String[]
   recordOwner     User                @relation(fields: [recordOwnerId], references: [id])
   recordOwnerId   String              @db.ObjectId
   notifications   MatchNotification[] @relation(name: "matchObjects", fields: [notificationIds], references: [id])
