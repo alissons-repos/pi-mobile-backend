@@ -47,3 +47,8 @@ model MatchNotification {
   object    Object[] @relation(name: "matchObjects", fields: [objectIds], references: [id])
   objectIds String[] @db.ObjectId
 }
+
+// model Match {
+//   whoLost
+//   whoFound
+// }
