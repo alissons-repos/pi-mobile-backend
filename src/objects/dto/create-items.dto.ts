@@ -7,7 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export class CreateObjectDto {
+export class CreateItemDto {
   @IsNotEmpty()
   @IsString()
   @IsIn(['found', 'lost'])
@@ -15,7 +15,7 @@ export class CreateObjectDto {
 
   @IsNotEmpty()
   @IsString()
-  object: string;
+  objectType: string;
 
   @IsOptional()
   @IsString()

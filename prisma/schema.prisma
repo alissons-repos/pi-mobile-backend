@@ -8,47 +8,42 @@ datasource db {
 }
 
 model User {
-  id              String              @id @default(auto()) @map("_id") @db.ObjectId
-  avatar          String
-  cpf             String              @unique
-  email           String              @unique
-  hash            String
-  firstName       String
-  lastName        String
-  phone           String
-  objects         Object[]
-  notifications   MatchNotification[] @relation(name: "matchUsers", fields: [notificationIds], references: [id])
-  notificationIds String[]            @db.ObjectId
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  avatar     String
+  cpf        String   @unique
+  email      String   @unique
+  hash       String
+  firstName  String
+  lastName   String
+  phone      String
+  items      Item[]
+  matches    Match[]  @relation(name: "matchUsers", fields: [matchesIds], references: [id])
+  matchesIds String[] @db.ObjectId
 }
 
-model Object {
-  id              String              @id @default(auto()) @map("_id") @db.ObjectId
-  situation       String              @default("lost")
-  object          String
-  brand           String              @default("null") // Opcional
-  model           String              @default("null") // Opcional
+model Item {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  situation       String   @default("lost")
+  objectType      String
+  brand           String   @default("null") // Opcional
+  model           String   @default("null") // Opcional
   color           String
-  characteristics String[]            @default(["null"]) // Opcional
+  characteristics String[] @default(["null"]) // Opcional
   place           String
   datetime        DateTime
-  info            String              @default("null") // Opcional
+  info            String   @default("null") // Opcional
   photos          String[]
-  recordOwner     User                @relation(fields: [recordOwnerId], references: [id])
-  recordOwnerId   String              @db.ObjectId
-  notifications   MatchNotification[] @relation(name: "matchObjects", fields: [notificationIds], references: [id])
-  notificationIds String[]            @db.ObjectId
+  recordOwner     User     @relation(fields: [recordOwnerId], references: [id])
+  recordOwnerId   String   @db.ObjectId
+  matches         Match[]  @relation(name: "matchItems", fields: [matchesIds], references: [id])
+  matchesIds      String[] @db.ObjectId
 }
 
-model MatchNotification {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  type      String   @default("match")
-  user      User[]   @relation(name: "matchUsers", fields: [userIds], references: [id])
-  userIds   String[] @db.ObjectId
-  object    Object[] @relation(name: "matchObjects", fields: [objectIds], references: [id])
-  objectIds String[] @db.ObjectId
+model Match {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  type    String   @default("match")
+  user    User[]   @relation(name: "matchUsers", fields: [userIds], references: [id])
+  userIds String[] @db.ObjectId
+  item    Item[]   @relation(name: "matchItems", fields: [itemIds], references: [id])
+  itemIds String[] @db.ObjectId
 }
-
-// model Match {
-//   whoLost
-//   whoFound
-// }

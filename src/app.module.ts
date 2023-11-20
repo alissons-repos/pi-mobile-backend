@@ -1,18 +1,19 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { UsersModule } from './users/users.module';
-import { ObjectsModule } from './objects/objects.module';
-import { NotificationsModule } from './notifications/notifications.module';
+import { ItemsModule } from './objects/items.module';
+import { MatchesModule } from './notifications/matches.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({ isGlobal: true }),
+    EventEmitterModule.forRoot({ global: true }),
     AuthModule,
     UsersModule,
-    ObjectsModule,
-    NotificationsModule,
-    AuthModule,
+    ItemsModule,
+    MatchesModule,
   ],
   controllers: [],
   providers: [],

@@ -14,9 +14,9 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ObjectsService } from './objects.service';
-import { CreateObjectDto } from './dto/create-object.dto';
-import { UpdateObjectDto } from './dto/update-object.dto';
+import { ItemsService } from './items.service';
+import { CreateItemDto } from './dto/create-items.dto';
+import { UpdateItemDto } from './dto/update-items.dto';
 // import { IdParamDto } from 'src/utils/dtos/id-param.dto';
 import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
 import { Request } from 'express';
@@ -24,43 +24,43 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { fileValidation } from 'src/utils/helpers/multerOptions';
 
 @UseGuards(JwtAuthGuard)
-@Controller('objects')
-export class ObjectsController {
-  constructor(private readonly objectsService: ObjectsService) {}
+@Controller('items')
+export class ItemsController {
+  constructor(private readonly itemsService: ItemsService) {}
 
   @Post()
-  create(@Req() req: Request, @Body() createObjectBody: CreateObjectDto) {
-    return this.objectsService.createObject(req, createObjectBody);
+  create(@Req() req: Request, @Body() createItemBody: CreateItemDto) {
+    return this.itemsService.createItem(req, createItemBody);
   }
 
   // @Get()
   // findAll() {
-  //   return this.objectsService.findAllObjects();
+  //   return this.itemsService.findAllItems();
   // }
 
   @Get()
-  findUserObjects(@Req() req: Request) {
-    return this.objectsService.findUserObjects(req);
+  findUserItems(@Req() req: Request) {
+    return this.itemsService.findUserItems(req);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.objectsService.findObjectById(id);
+    return this.itemsService.findItemById(id);
   }
 
   @Put(':id')
   update(
     @Req() req: Request,
     @Param('id') id: string,
-    @Body() updateObjectBody: UpdateObjectDto,
+    @Body() updateItemBody: UpdateItemDto,
   ) {
-    return this.objectsService.updateObject(req, id, updateObjectBody);
+    return this.itemsService.updateItem(req, id, updateItemBody);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Req() req: Request, @Param('id') id: string) {
-    return this.objectsService.removeObject(req, id);
+    return this.itemsService.removeItem(req, id);
   }
 
   @Patch('upload/:id')
@@ -71,6 +71,6 @@ export class ObjectsController {
     @UploadedFiles(fileValidation)
     photos: Array<Express.Multer.File>,
   ) {
-    return this.objectsService.uploadObjectPhotos(req, id, photos);
+    return this.itemsService.uploadItemPhotos(req, id, photos);
   }
 }

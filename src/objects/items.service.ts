@@ -1,36 +1,42 @@
-/* eslint-disable @typescript-eslint/ban-types */
-
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateObjectDto } from './dto/create-object.dto';
-import { UpdateObjectDto } from './dto/update-object.dto';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { CreateItemDto } from './dto/create-items.dto';
+import { UpdateItemDto } from './dto/update-items.dto';
 // import { IdParamDto } from 'src/utils/dtos/id-param.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Request } from 'express';
-import { Object } from '@prisma/client';
+import { Item } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
 import { File } from 'buffer';
 
 @Injectable()
-export class ObjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+export class ItemsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
-  async createObject(
+  @OnEvent('item.created')
+  async createItem(
     req: Request,
-    createObjectBody: CreateObjectDto,
-  ): Promise<Object | never> {
+    createItemBody: CreateItemDto,
+  ): Promise<Item | never> {
     const userID: string = req.user['id'];
 
     const data = {
-      ...createObjectBody,
-      datetime: new Date(createObjectBody.datetime).toISOString(),
+      ...createItemBody,
+      datetime: new Date(createItemBody.datetime).toISOString(),
       recordOwnerId: userID,
       photos: ['default-photo.jpg'],
     };
 
     try {
-      const newObject = await this.prisma.object.create({ data });
+      const newItem = await this.prisma.item.create({ data });
 
-      return newObject;
+      this.eventEmitter.emit('item.created');
+      console.log('Criando um objeto...');
+
+      return newItem;
     } catch (e) {
       console.error('Erro Logado:', e);
       // throw new HttpException(
@@ -40,96 +46,96 @@ export class ObjectsService {
     }
   }
 
-  // async findAllObjects(): Promise<Object[] | never> {
+  // async findAllItems(): Promise<Item[] | never> {
   //   try {
-  //     const objectsList = await this.prisma.object.findMany();
+  //     const itemsList = await this.prisma.item.findMany();
 
-  //     return objectsList;
+  //     return itemsList;
   //   } catch (e) {
   //     console.error('Erro Logado:', e);
   //   }
   // }
 
-  async findUserObjects(req: Request): Promise<Object[] | never> {
+  async findUserItems(req: Request): Promise<Item[] | never> {
     try {
       const userID: string = req.user['id'];
 
-      const userObjects = await this.prisma.user.findUnique({
+      const userItems = await this.prisma.user.findUnique({
         where: { id: userID },
-        include: { objects: true },
+        include: { items: true },
       });
 
-      return userObjects.objects;
+      return userItems.items;
     } catch (e) {
       console.error('Erro Logado:', e);
     }
   }
 
-  async findObjectById(id: string): Promise<Object | never> {
+  async findItemById(id: string): Promise<Item | never> {
     try {
-      const object = await this.prisma.object.findUnique({ where: { id } });
+      const item = await this.prisma.item.findUnique({ where: { id } });
 
-      if (!object) {
+      if (!item) {
         throw new HttpException('Objeto não encontrado!', HttpStatus.NOT_FOUND);
       }
 
-      return object;
+      return item;
     } catch (e) {
       console.error('Erro Logado:', e);
     }
   }
 
-  async updateObject(
+  async updateItem(
     req: Request,
     id: string,
-    updateObjectBody: UpdateObjectDto,
-  ): Promise<Object | never> {
+    updateItemBody: UpdateItemDto,
+  ): Promise<Item | never> {
     const userID: string = req.user['id'];
 
-    const userObject = await this.prisma.object.findUnique({
+    const userItem = await this.prisma.item.findUnique({
       where: { id },
     });
 
-    if (userObject.recordOwnerId !== userID) {
+    if (userItem.recordOwnerId !== userID) {
       throw new HttpException('Objeto não encontrado!', HttpStatus.NOT_FOUND);
     }
 
     const data = {
-      ...updateObjectBody,
-      datetime: new Date(updateObjectBody.datetime).toISOString(),
+      ...updateItemBody,
+      datetime: new Date(updateItemBody.datetime).toISOString(),
     };
 
     try {
-      const object = await this.prisma.object.update({ where: { id }, data });
-      return object;
+      const item = await this.prisma.item.update({ where: { id }, data });
+      return item;
     } catch (e) {
       console.error('Erro Logado:', e);
     }
   }
 
-  async removeObject(req: Request, id: string) {
+  async removeItem(req: Request, id: string) {
     const userID: string = req.user['id'];
 
-    const userObject = await this.prisma.object.findUnique({
+    const userItem = await this.prisma.item.findUnique({
       where: { id },
     });
 
-    if (userObject.recordOwnerId !== userID) {
+    if (userItem.recordOwnerId !== userID) {
       throw new HttpException('Objeto não encontrado!', HttpStatus.NOT_FOUND);
     }
 
     try {
-      return await this.prisma.object.delete({ where: { id } });
+      return await this.prisma.item.delete({ where: { id } });
     } catch (e) {
       console.error('Erro Logado:', e);
     }
   }
 
-  async uploadObjectPhotos(
+  async uploadItemPhotos(
     req: Request,
     id: string,
     photos: Array<Express.Multer.File>,
-  ): Promise<Object | never> {
+  ): Promise<Item | never> {
     if (!photos) {
       throw new HttpException(
         'É obrigatório o envio de pelo menos uma foto do objeto!',
@@ -138,14 +144,14 @@ export class ObjectsService {
     }
 
     const userID: string = req.user['id'];
-    const objectPhotos: Array<string> = [];
+    const itemPhotos: Array<string> = [];
 
-    const userObject = await this.prisma.user.findUnique({
+    const userItem = await this.prisma.user.findUnique({
       where: { id: userID },
-      select: { objects: { where: { id } } },
+      select: { items: { where: { id } } },
     });
 
-    if (!userObject) {
+    if (!userItem) {
       throw new HttpException('Objeto não encontrado!', HttpStatus.NOT_FOUND);
     }
 
@@ -181,16 +187,16 @@ export class ObjectsService {
         .from('objectsPhotos')
         .getPublicUrl(photoFileName).data.publicUrl;
 
-      objectPhotos.push(photosPublicUrl);
+      itemPhotos.push(photosPublicUrl);
     }
 
     try {
-      const object = await this.prisma.object.update({
+      const item = await this.prisma.item.update({
         where: { id },
-        data: { photos: objectPhotos },
+        data: { photos: itemPhotos },
       });
 
-      return object;
+      return item;
     } catch (e) {
       console.error('Erro Logado:', e);
     }

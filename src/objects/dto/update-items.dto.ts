@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateObjectDto } from './create-object.dto';
+import { CreateItemDto } from './create-items.dto';
 import {
   IsArray,
   IsDateString,
@@ -9,7 +9,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export class UpdateObjectDto extends PartialType(CreateObjectDto) {
+export class UpdateItemDto extends PartialType(CreateItemDto) {
   @IsNotEmpty()
   @IsString()
   @IsIn(['found', 'lost'])
@@ -17,7 +17,7 @@ export class UpdateObjectDto extends PartialType(CreateObjectDto) {
 
   @IsNotEmpty()
   @IsString()
-  object: string;
+  objectType: string;
 
   @IsOptional()
   @IsString()
