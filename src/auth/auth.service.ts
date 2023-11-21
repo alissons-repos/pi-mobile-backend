@@ -26,7 +26,9 @@ export class AuthService {
 
     const payload = { sub: user.id };
 
-    return { access_token: this.jwtService.sign(payload) };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 
   async signUp(
@@ -68,7 +70,9 @@ export class AuthService {
 
       const payload = { sub: user.id };
 
-      return { access_token: this.jwtService.sign(payload) };
+      return {
+        access_token: this.jwtService.sign(payload),
+      };
     } catch (e) {
       console.error('Erro Logado:', e);
       // throw new HttpException(
