@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateItemDto } from './dto/create-items.dto';
 import { UpdateItemDto } from './dto/update-items.dto';
 // import { IdParamDto } from 'src/utils/dtos/id-param.dto';
@@ -16,7 +16,6 @@ export class ItemsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  @OnEvent('item.created')
   async createItem(
     req: Request,
     createItemBody: CreateItemDto,
@@ -33,8 +32,8 @@ export class ItemsService {
     try {
       const newItem = await this.prisma.item.create({ data });
 
-      this.eventEmitter.emit('item.created');
-      console.log('Criando um objeto...');
+      this.eventEmitter.emit('item.created', newItem.id);
+      console.log('Criando Item', newItem.id);
 
       return newItem;
     } catch (e) {
@@ -72,17 +71,13 @@ export class ItemsService {
   }
 
   async findItemById(id: string): Promise<Item | never> {
-    try {
-      const item = await this.prisma.item.findUnique({ where: { id } });
+    const item = await this.prisma.item.findUnique({ where: { id } });
 
-      if (!item) {
-        throw new HttpException('Objeto não encontrado!', HttpStatus.NOT_FOUND);
-      }
-
-      return item;
-    } catch (e) {
-      console.error('Erro Logado:', e);
+    if (!item) {
+      throw new HttpException('Objeto não encontrado!', HttpStatus.NOT_FOUND);
     }
+
+    return item;
   }
 
   async updateItem(
@@ -107,6 +102,10 @@ export class ItemsService {
 
     try {
       const item = await this.prisma.item.update({ where: { id }, data });
+
+      this.eventEmitter.emit('item.updated');
+      console.log('Atualizando Item');
+
       return item;
     } catch (e) {
       console.error('Erro Logado:', e);
@@ -195,6 +194,9 @@ export class ItemsService {
         where: { id },
         data: { photos: itemPhotos },
       });
+
+      this.eventEmitter.emit('item.updated');
+      console.log('Atualizando Item');
 
       return item;
     } catch (e) {

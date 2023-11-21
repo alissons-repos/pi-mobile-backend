@@ -40,10 +40,12 @@ model Item {
 }
 
 model Match {
-  id      String   @id @default(auto()) @map("_id") @db.ObjectId
-  type    String   @default("match")
-  user    User[]   @relation(name: "matchUsers", fields: [userIds], references: [id])
-  userIds String[] @db.ObjectId
-  item    Item[]   @relation(name: "matchItems", fields: [itemIds], references: [id])
-  itemIds String[] @db.ObjectId
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  type           String   @default("match")
+  user           User[]   @relation(name: "matchUsers", fields: [userIds], references: [id])
+  userIds        String[] @db.ObjectId
+  item           Item[]   @relation(name: "matchItems", fields: [itemIds], references: [id])
+  itemIds        String[] @db.ObjectId
+  // whoLostStatus  Boolean  @default(false)
+  // whoFoundStatus Boolean  @default(false)
 }

@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/ban-types */
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Match, Item } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { DiceCoefficient, PorterStemmerPt, RegexpTokenizer } from 'natural';
 import { Request } from 'express';
-// import { OnEvent } from '@nestjs/event-emitter';
+import { OnEvent } from '@nestjs/event-emitter';
 
 @Injectable()
 export class MatchesService {
@@ -46,15 +45,15 @@ export class MatchesService {
     // console.log('lost', availableLostProps);
     // console.log('found', availableFoundProps);
 
-    if (availableLostProps.length == 3 || availableFoundProps.length == 3) {
+    if (availableLostProps.length === 3 || availableFoundProps.length === 3) {
       return 3;
     }
 
-    if (availableLostProps.length == 4 || availableFoundProps.length == 4) {
-      return 4;
-    }
+    // if (availableLostProps.length === 4 || availableFoundProps.length === 4) {
+    //   return 4;
+    // }
 
-    return 5;
+    return 4;
   }
 
   calculateSimilarity(lostItem: Item, foundItem: Item): boolean {
@@ -156,7 +155,7 @@ export class MatchesService {
     return score >= dinamicScore;
   }
 
-  // @OnEvent('item.created', { async: true })
+  @OnEvent('item.*', { async: true })
   async triggerMatchSearch() {
     const lostItems = await this.prisma.item.findMany({
       where: { situation: 'lost' },
@@ -188,24 +187,44 @@ export class MatchesService {
             match.itemIds[1] === foundItems[j].id,
         );
 
-        if (existsMatch != null) {
+        if (existsMatch?.itemIds.length > 0) {
           continue;
         }
 
         const similar = this.calculateSimilarity(lostItems[i], foundItems[j]);
 
-        if (similar)
+        if (similar) {
           possibleMatching.push({
             userIds: [lostItems[i].recordOwnerId, foundItems[j].recordOwnerId],
             itemIds: [lostItems[i].id, foundItems[j].id],
             type: 'match',
           });
+
+          await this.prisma.match.create({
+            data: {
+              userIds: [
+                lostItems[i].recordOwnerId,
+                foundItems[j].recordOwnerId,
+              ],
+              itemIds: [lostItems[i].id, foundItems[j].id],
+              user: {
+                connect: [
+                  { id: lostItems[i].recordOwnerId },
+                  { id: foundItems[j].recordOwnerId },
+                ],
+              },
+              item: {
+                connect: [{ id: lostItems[i].id }, { id: foundItems[j].id }],
+              },
+              type: 'match',
+            },
+            include: { user: true, item: true },
+          });
+        }
       }
     }
 
     if (possibleMatching.length == 0) return [];
-
-    await this.prisma.match.createMany({ data: possibleMatching });
 
     console.log('Fui acionado pelo evento!');
     return possibleMatching;
@@ -217,20 +236,56 @@ export class MatchesService {
 
       const userMatches = await this.prisma.user.findUnique({
         where: { id: userID },
-        include: { matches: true, items: true },
+        include: { matches: true },
       });
 
-      console.log(userMatches);
-
-      return userMatches;
+      return userMatches.matches;
     } catch (e) {
       console.error('Erro Logado AQUI:', e);
     }
   }
 
-  async deleteMatches() {
-    // const result = await this.prisma.match.deleteMany();
-    // return result;
-    return;
+  // async findAllMatches(): Promise<Match[] | never> {
+  //   try {
+  //     const matches = await this.prisma.match.findMany();
+
+  //     return matches;
+  //   } catch (e) {
+  //     console.error('Erro Logado AQUI:', e);
+  //   }
+  // }
+
+  async findMatchById(id: string): Promise<Match | never> {
+    const match = await this.prisma.match.findUnique({ where: { id } });
+
+    if (!match) {
+      throw new HttpException(
+        'Correspondência não encontrada!',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return match;
   }
+
+  // async removeMatch(req: Request, id: string) {
+  //   const userID: string = req.user['id'];
+
+  //   const userMatch = await this.prisma.match.findUnique({
+  //     where: { id },
+  //   });
+
+  //   if (!userMatch.userIds.includes(userID)) {
+  //     throw new HttpException(
+  //       'Correspondância não encontrada!',
+  //       HttpStatus.NOT_FOUND,
+  //     );
+  //   }
+
+  //   try {
+  //     return await this.prisma.match.delete({ where: { id } });
+  //   } catch (e) {
+  //     console.error('Erro Logado:', e);
+  //   }
+  // }
 }

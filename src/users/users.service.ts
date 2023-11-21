@@ -76,16 +76,6 @@ export class UsersService {
 
     delete user.hash;
     return user;
-
-    // if (e instanceof PrismaClientKnownRequestError) {
-    //   console.log('Caso 1');
-    //   if ((e.code = 'P2023')) {
-    //     throw new HttpException(
-    //       'Parâmetro ID inválido!',
-    //       HttpStatus.BAD_REQUEST,
-    //     );
-    //   }
-    // }
   }
 
   async findUserBy(prop: string): Promise<User | never> {

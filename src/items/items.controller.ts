@@ -29,27 +29,27 @@ export class ItemsController {
   constructor(private readonly itemsService: ItemsService) {}
 
   @Post()
-  create(@Req() req: Request, @Body() createItemBody: CreateItemDto) {
+  createItem(@Req() req: Request, @Body() createItemBody: CreateItemDto) {
     return this.itemsService.createItem(req, createItemBody);
   }
-
-  // @Get()
-  // findAll() {
-  //   return this.itemsService.findAllItems();
-  // }
 
   @Get()
   findUserItems(@Req() req: Request) {
     return this.itemsService.findUserItems(req);
   }
 
+  // @Get()
+  // findAllItems() {
+  //   return this.itemsService.findAllItems();
+  // }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findItemById(@Param('id') id: string) {
     return this.itemsService.findItemById(id);
   }
 
   @Put(':id')
-  update(
+  updateItem(
     @Req() req: Request,
     @Param('id') id: string,
     @Body() updateItemBody: UpdateItemDto,
@@ -59,13 +59,13 @@ export class ItemsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Req() req: Request, @Param('id') id: string) {
+  removeItem(@Req() req: Request, @Param('id') id: string) {
     return this.itemsService.removeItem(req, id);
   }
 
   @Patch('upload/:id')
   @UseInterceptors(FilesInterceptor('photos', 4))
-  upload(
+  uploadItemPhotos(
     @Req() req: Request,
     @Param('id') id: string,
     @UploadedFiles(fileValidation)
