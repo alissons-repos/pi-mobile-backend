@@ -2,12 +2,12 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateItemDto } from './dto/create-items.dto';
 import { UpdateItemDto } from './dto/update-items.dto';
-// import { IdParamDto } from 'src/utils/dtos/id-param.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Request } from 'express';
 import { Item } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
 import { File } from 'buffer';
+// import { IdParamDto } from 'src/utils/dtos/id-param.dto';
 
 @Injectable()
 export class ItemsService {
@@ -33,7 +33,6 @@ export class ItemsService {
       const newItem = await this.prisma.item.create({ data });
 
       this.eventEmitter.emit('item.created', newItem.id);
-      console.log('Criando Item', newItem.id);
 
       return newItem;
     } catch (e) {
@@ -44,16 +43,6 @@ export class ItemsService {
       // );
     }
   }
-
-  // async findAllItems(): Promise<Item[] | never> {
-  //   try {
-  //     const itemsList = await this.prisma.item.findMany();
-
-  //     return itemsList;
-  //   } catch (e) {
-  //     console.error('Erro Logado:', e);
-  //   }
-  // }
 
   async findUserItems(req: Request): Promise<Item[] | never> {
     try {
@@ -69,6 +58,16 @@ export class ItemsService {
       console.error('Erro Logado:', e);
     }
   }
+
+  // async findAllItems(): Promise<Item[] | never> {
+  //   try {
+  //     const itemsList = await this.prisma.item.findMany();
+
+  //     return itemsList;
+  //   } catch (e) {
+  //     console.error('Erro Logado:', e);
+  //   }
+  // }
 
   async findItemById(id: string): Promise<Item | never> {
     const item = await this.prisma.item.findUnique({ where: { id } });
@@ -104,27 +103,8 @@ export class ItemsService {
       const item = await this.prisma.item.update({ where: { id }, data });
 
       this.eventEmitter.emit('item.updated');
-      console.log('Atualizando Item');
 
       return item;
-    } catch (e) {
-      console.error('Erro Logado:', e);
-    }
-  }
-
-  async removeItem(req: Request, id: string) {
-    const userID: string = req.user['id'];
-
-    const userItem = await this.prisma.item.findUnique({
-      where: { id },
-    });
-
-    if (userItem.recordOwnerId !== userID) {
-      throw new HttpException('Objeto não encontrado!', HttpStatus.NOT_FOUND);
-    }
-
-    try {
-      return await this.prisma.item.delete({ where: { id } });
     } catch (e) {
       console.error('Erro Logado:', e);
     }
@@ -167,14 +147,12 @@ export class ItemsService {
         type: photos[i].mimetype,
       });
 
-      console.log(file);
-
       const { error } = await supabase.storage
         .from('objectsPhotos')
         .upload(photoFileName, file, { upsert: true });
 
       if (error) {
-        console.log('Erro aqui: ', error);
+        console.error('Erro Supabase: ', error);
 
         throw new HttpException(
           'Algo deu errado ao tentar enviar as imagens!',
@@ -196,9 +174,26 @@ export class ItemsService {
       });
 
       this.eventEmitter.emit('item.updated');
-      console.log('Atualizando Item');
 
       return item;
+    } catch (e) {
+      console.error('Erro Logado:', e);
+    }
+  }
+
+  async removeItem(req: Request, id: string) {
+    const userID: string = req.user['id'];
+
+    const userItem = await this.prisma.item.findUnique({
+      where: { id },
+    });
+
+    if (!userItem || userItem.recordOwnerId !== userID) {
+      throw new HttpException('Objeto não encontrado!', HttpStatus.NOT_FOUND);
+    }
+
+    try {
+      return await this.prisma.item.delete({ where: { id } });
     } catch (e) {
       console.error('Erro Logado:', e);
     }

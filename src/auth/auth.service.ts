@@ -31,6 +31,8 @@ export class AuthService {
     };
   }
 
+  // async signOut(): Promise<void> {}
+
   async signUp(
     createUserBody: CreateUserDto,
   ): Promise<{ access_token: string } | never> {

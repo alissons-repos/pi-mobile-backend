@@ -2,13 +2,13 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-// import { IdParamDto } from 'src/utils/dto/id-param.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserWithoutHash } from 'src/utils/types/UserCustomTypes.type';
 import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { File } from 'buffer';
+// import { IdParamDto } from 'src/utils/dto/id-param.dto';
 
 @Injectable()
 export class UsersService {
@@ -49,22 +49,30 @@ export class UsersService {
     }
   }
 
-  async findUsers(): Promise<UserWithoutHash[] | never> {
-    try {
-      const usersList = await this.prisma.user.findMany();
-      const userListWithoutHash = usersList.map((user) => {
-        delete user.hash;
-        return user;
-      });
+  // async findAllUsers(): Promise<UserWithoutHash[] | never> {
+  //   try {
+  //     const usersList = await this.prisma.user.findMany();
+  //     const userListWithoutHash = usersList.map((user) => {
+  //       delete user.hash;
+  //       return user;
+  //     });
 
-      return userListWithoutHash;
-    } catch (e) {
-      console.error('Erro Logado:', e);
-      // throw new HttpException(
-      //   'Erro interno na aplicação',
-      //   HttpStatus.INTERNAL_SERVER_ERROR,
-      // );
+  //     return userListWithoutHash;
+  //   } catch (e) {
+  //     console.error('Erro Logado:', e);
+  //   }
+  // }
+
+  async findUserBy(prop: string): Promise<User | never> {
+    const user = await this.prisma.user.findFirst({
+      where: { OR: [{ cpf: { equals: prop } }, { email: { equals: prop } }] },
+    });
+
+    if (!user) {
+      throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
     }
+
+    return user;
   }
 
   async findUserById(id: string): Promise<UserWithoutHash | never> {
@@ -78,15 +86,15 @@ export class UsersService {
     return user;
   }
 
-  async findUserBy(prop: string): Promise<User | never> {
-    const user = await this.prisma.user.findFirst({
-      where: { OR: [{ cpf: { equals: prop } }, { email: { equals: prop } }] },
-    });
+  async findUser(req: Request): Promise<UserWithoutHash | never> {
+    const userID: string = req.user['id'];
+    const user = await this.prisma.user.findUnique({ where: { id: userID } });
 
     if (!user) {
       throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
     }
 
+    delete user.hash;
     return user;
   }
 
@@ -111,34 +119,6 @@ export class UsersService {
       return user;
     } catch (e) {
       console.error('Erro Logado:', e);
-      // throw new HttpException(
-      //   'Erro interno na aplicação',
-      //   HttpStatus.INTERNAL_SERVER_ERROR,
-      // );
-    }
-  }
-
-  async removeUser(req: Request) {
-    try {
-      const userID: string = req.user['id'];
-      const exist = await this.prisma.user.findUnique({
-        where: { id: userID },
-      });
-
-      if (!exist) {
-        throw new HttpException(
-          'Usuário não encontrado!',
-          HttpStatus.NOT_FOUND,
-        );
-      }
-
-      return await this.prisma.user.delete({ where: { id: userID } });
-    } catch (e) {
-      console.error('Erro Logado:', e);
-      // throw new HttpException(
-      //   'Erro interno na aplicação',
-      //   HttpStatus.INTERNAL_SERVER_ERROR,
-      // );
     }
   }
 
@@ -196,6 +176,26 @@ export class UsersService {
 
       delete user.hash;
       return user;
+    } catch (e) {
+      console.error('Erro Logado:', e);
+    }
+  }
+
+  async removeUser(req: Request) {
+    try {
+      const userID: string = req.user['id'];
+      const exist = await this.prisma.user.findUnique({
+        where: { id: userID },
+      });
+
+      if (!exist) {
+        throw new HttpException(
+          'Usuário não encontrado!',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      return await this.prisma.user.delete({ where: { id: userID } });
     } catch (e) {
       console.error('Erro Logado:', e);
     }

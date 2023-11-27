@@ -226,11 +226,10 @@ export class MatchesService {
 
     if (possibleMatching.length == 0) return [];
 
-    console.log('Fui acionado pelo evento!');
     return possibleMatching;
   }
 
-  async findUserMatches(req: Request) {
+  async findUserMatches(req: Request): Promise<Match[] | never> {
     try {
       const userID: string = req.user['id'];
 

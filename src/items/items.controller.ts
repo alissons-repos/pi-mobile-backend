@@ -17,11 +17,11 @@ import {
 import { ItemsService } from './items.service';
 import { CreateItemDto } from './dto/create-items.dto';
 import { UpdateItemDto } from './dto/update-items.dto';
-// import { IdParamDto } from 'src/utils/dtos/id-param.dto';
 import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
 import { Request } from 'express';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { fileValidation } from 'src/utils/helpers/multerOptions';
+// import { IdParamDto } from 'src/utils/dtos/id-param.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('items')
@@ -57,13 +57,7 @@ export class ItemsController {
     return this.itemsService.updateItem(req, id, updateItemBody);
   }
 
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  removeItem(@Req() req: Request, @Param('id') id: string) {
-    return this.itemsService.removeItem(req, id);
-  }
-
-  @Patch('upload/:id')
+  @Patch('/upload/:id')
   @UseInterceptors(FilesInterceptor('photos', 4))
   uploadItemPhotos(
     @Req() req: Request,
@@ -72,5 +66,11 @@ export class ItemsController {
     photos: Array<Express.Multer.File>,
   ) {
     return this.itemsService.uploadItemPhotos(req, id, photos);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeItem(@Req() req: Request, @Param('id') id: string) {
+    return this.itemsService.removeItem(req, id);
   }
 }

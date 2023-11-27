@@ -1,14 +1,17 @@
 import {
   Body,
   Controller,
+  // Get,
   HttpCode,
   HttpStatus,
   Patch,
   Post,
+  // UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/signin.dto';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+// import { JwtAuthGuard } from './guard/jwt.guard';
 
 @Controller()
 export class AuthController {
@@ -18,6 +21,12 @@ export class AuthController {
   signUp(@Body() createUserBody: CreateUserDto) {
     return this.authService.signUp(createUserBody);
   }
+
+  // @UseGuards(JwtAuthGuard)
+  // @Get('signup')
+  // signOut(@Body() createUserBody: CreateUserDto) {
+  //   return this.authService.signOut(createUserBody);
+  // }
 
   @Post('signin')
   @HttpCode(HttpStatus.OK)
