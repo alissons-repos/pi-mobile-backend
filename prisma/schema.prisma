@@ -9,7 +9,7 @@ datasource db {
 
 model User {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  avatar     String
+  avatar     String   @default("default-avatar.jpg")
   cpf        String   @unique
   email      String   @unique
   hash       String
@@ -25,14 +25,14 @@ model Item {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   situation       String   @default("lost")
   objectType      String
-  brand           String   @default("null") // Opcional
-  model           String   @default("null") // Opcional
+  brand           String   @default("") // Opcional
+  model           String   @default("") // Opcional
   color           String
-  characteristics String[] @default(["null"]) // Opcional
+  characteristics String[] @default([]) // Opcional
   place           String
   datetime        DateTime
-  info            String   @default("null") // Opcional
-  photos          String[]
+  info            String   @default("") // Opcional
+  photos          String[] @default(["default-photo.jpg"])
   recordOwner     User     @relation(fields: [recordOwnerId], references: [id])
   recordOwnerId   String   @db.ObjectId
   matches         Match[]  @relation(name: "matchItems", fields: [matchesIds], references: [id])
@@ -40,12 +40,10 @@ model Item {
 }
 
 model Match {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  type           String   @default("match")
-  user           User[]   @relation(name: "matchUsers", fields: [userIds], references: [id])
-  userIds        String[] @db.ObjectId
-  item           Item[]   @relation(name: "matchItems", fields: [itemIds], references: [id])
-  itemIds        String[] @db.ObjectId
-  // whoLostStatus  Boolean  @default(false)
-  // whoFoundStatus Boolean  @default(false)
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  type    String   @default("match")
+  user    User[]   @relation(name: "matchUsers", fields: [userIds], references: [id])
+  userIds String[] @db.ObjectId
+  item    Item[]   @relation(name: "matchItems", fields: [itemIds], references: [id])
+  itemIds String[] @db.ObjectId
 }

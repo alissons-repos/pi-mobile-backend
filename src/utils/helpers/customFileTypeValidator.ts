@@ -5,7 +5,7 @@ export interface CustomFileTypeValidatorOptions {
 }
 
 export class CustomFileTypeValidator extends FileValidator {
-  private allowedMimeTypes: string[] = ['image/jpeg'];
+  private allowedMimeTypes: string[] = ['image/jpeg', 'image/png'];
 
   constructor(
     protected readonly validationOptions: CustomFileTypeValidatorOptions,
@@ -15,9 +15,9 @@ export class CustomFileTypeValidator extends FileValidator {
   }
 
   public isValid(file?: Express.Multer.File): boolean {
-    const EXTENSIONS_REGEX = /.(jpg|jpeg)$/;
+    // const EXTENSIONS_REGEX = /.(jpg|jpeg|png)$/;
 
-    if (!EXTENSIONS_REGEX.test(file.originalname)) return false;
+    // if (!EXTENSIONS_REGEX.test(file.originalname)) return false;
 
     if (!this.allowedMimeTypes.includes(file.mimetype)) return false;
 

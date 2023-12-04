@@ -146,7 +146,9 @@ export class UsersService {
       { auth: { persistSession: false } },
     );
 
-    const avatarFileName = `${userID}-avatar`;
+    console.log(avatar);
+
+    const avatarFileName = `${userID}-${Math.round(Math.random() * 1000)}`;
     const file = new File([avatar.buffer], avatarFileName, {
       type: avatar.mimetype,
     });
@@ -156,10 +158,10 @@ export class UsersService {
       .upload(avatarFileName, file, { upsert: true });
 
     if (error) {
-      console.log('Erro aqui: ', error);
+      console.log('Erro Supabase:', error);
 
       throw new HttpException(
-        'Algo deu errado ao tentar enviar a imagem!',
+        'Algo deu errado ao tentar enviar a imagem de  perfil!',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -181,6 +183,48 @@ export class UsersService {
     }
   }
 
+  async removeUserAvatar(req: Request) {
+    const userID: string = req.user['id'];
+    const user = this.prisma.user.findUnique({ where: { id: userID } });
+
+    if (!user) {
+      throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
+    }
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_KEY,
+      { auth: { persistSession: false } },
+    );
+
+    const avatarFileName = `${userID}-avatar`;
+
+    const { error } = await supabase.storage
+      .from('usersAvatars')
+      .remove([avatarFileName]);
+
+    if (error) {
+      console.log('Erro Supabase:', error);
+
+      throw new HttpException(
+        'Algo deu errado ao tentar apagar a imagem de perfil!',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userID },
+        data: { avatar: 'default-avatar.jpg' },
+      });
+
+      delete user.hash;
+      return user;
+    } catch (e) {
+      console.error('Erro Logado:', e);
+    }
+  }
+
   async removeUser(req: Request) {
     try {
       const userID: string = req.user['id'];
@@ -192,6 +236,27 @@ export class UsersService {
         throw new HttpException(
           'Usuário não encontrado!',
           HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_KEY,
+        { auth: { persistSession: false } },
+      );
+
+      const avatarFileName = `${userID}-avatar`;
+
+      const { error } = await supabase.storage
+        .from('usersAvatars')
+        .remove([avatarFileName]);
+
+      if (error) {
+        console.log('Erro Supabase:', error);
+
+        throw new HttpException(
+          'Algo deu errado ao tentar apagar a imagem de perfil!',
+          HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
 

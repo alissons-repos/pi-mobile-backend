@@ -141,7 +141,9 @@ export class ItemsService {
     );
 
     for (let i = 0; i < photos.length; i++) {
-      const photoFileName = `${userID}-photo-${i}`;
+      const photoFileName = `${userID}-${i}-${Math.round(
+        Math.random() * 1000,
+      )}`;
 
       const file = new File([photos[i].buffer], photoFileName, {
         type: photos[i].mimetype,

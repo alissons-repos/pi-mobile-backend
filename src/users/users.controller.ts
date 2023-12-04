@@ -5,7 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  // Param,
+  Param,
   Patch,
   Put,
   Req,
@@ -31,10 +31,10 @@ export class UsersController {
   //   return this.usersService.findAllUsers();
   // }
 
-  // @Get(':id')
-  // findUserById(@Param('id') id: string) {
-  //   return this.usersService.findUserById(id);
-  // }
+  @Get(':id')
+  findUserById(@Param('id') id: string) {
+    return this.usersService.findUserById(id);
+  }
 
   @Get()
   findUser(@Req() req: Request) {
@@ -53,6 +53,11 @@ export class UsersController {
     @UploadedFile(fileValidation) avatar: Express.Multer.File,
   ) {
     return this.usersService.uploadUserAvatar(req, avatar);
+  }
+
+  @Patch('remove/avatar')
+  removeUserAvatar(@Req() req: Request) {
+    return this.usersService.removeUserAvatar(req);
   }
 
   @Delete()
