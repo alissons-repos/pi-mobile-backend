@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  avatar     String   @default("default-avatar.jpg")
+  cpf        String   @unique
+  email      String   @unique
+  hash       String
+  firstName  String
+  lastName   String
+  phone      String
+  items      Item[]
+  matches    Match[]  @relation(name: "matchUsers", fields: [matchesIds], references: [id])
+  matchesIds String[] @db.ObjectId
+}
+
+model Item {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  situation       String   @default("lost")
+  objectType      String
+  brand           String   @default("") // Opcional
+  model           String   @default("") // Opcional
+  color           String
+  characteristics String[] @default([]) // Opcional
+  place           String
+  datetime        DateTime
+  info            String   @default("") // Opcional
+  photos          String[] @default(["default-photo.jpg"])
+  recordOwner     User     @relation(fields: [recordOwnerId], references: [id])
+  recordOwnerId   String   @db.ObjectId
+  matches         Match[]  @relation(name: "matchItems", fields: [matchesIds], references: [id])
+  matchesIds      String[] @db.ObjectId
+}
+
+model Match {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  type    String   @default("match")
+  user    User[]   @relation(name: "matchUsers", fields: [userIds], references: [id])
+  userIds String[] @db.ObjectId
+  item    Item[]   @relation(name: "matchItems", fields: [itemIds], references: [id])
+  itemIds String[] @db.ObjectId
+}
